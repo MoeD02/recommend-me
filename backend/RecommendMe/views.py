@@ -55,12 +55,7 @@ def get_gpt_recommendation(request):
 @csrf_exempt
 def fetch_game_details(request):
     if request.method == "POST":
-        # data = json.loads(request.body)
-        # game_name = data.get("game_name", "")
-
-        # if not game_name:
-        #     return JsonResponse({"error": "No game name provided"}, status=400)
-        game_name = "The Witcher 3: Wild Hunt"
+        game_name = "The Witcher 3: Wild Hunt"  # Example game name
         try:
             # Fetch details from RAWG API
             rawg_api_key = os.environ.get("RAWG_API_KEY")
@@ -69,7 +64,30 @@ def fetch_game_details(request):
 
             if response.status_code == 200:
                 game_data = response.json()
-                return JsonResponse({"game_data": game_data})
+
+                # Extract relevant details
+                if game_data.get("results"):
+                    game = game_data["results"][
+                        0
+                    ]  # Assuming only one result is returned
+
+                    game_details = {
+                        "name": game.get("name", "N/A"),
+                        "description": game.get(
+                            "description_raw", "No description available"
+                        ),
+                        "rating": game.get("rating", "N/A"),
+                        "image": game.get("background_image", ""),
+                        "stores": [
+                            store["store"]["name"] for store in game.get("stores", [])
+                        ],
+                    }
+
+                    return JsonResponse({"game_data": game_details})
+                else:
+                    return JsonResponse(
+                        {"error": "No game found with that name"}, status=404
+                    )
             else:
                 return JsonResponse(
                     {"error": "Failed to fetch game details"},
